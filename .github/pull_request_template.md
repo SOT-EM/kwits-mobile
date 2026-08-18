@@ -1,6 +1,6 @@
 <!--
    Fill every section. Delete a section only if it truly does not apply.
-  Keep the PR title in Conventional Commits form, e.g. "feat: add pusher webhook endpoint".
+  Keep the PR title in Conventional Commits form, e.g. "feat: add expense split validation".
 -->
 
 ## Summary
@@ -24,39 +24,40 @@
 
 ## <!-- Bullet the key changes so reviewers know where to look. -->
 
-## API changes
+## Screens / UI affected
 
-<!-- New/changed endpoints, request/response shape, status codes. Delete if none. -->
+## <!-- Which screens or components changed? Include a screenshot or screen recording for visual changes. Delete if this is a non-UI change. -->
 
-- Endpoints affected:
-- Backward compatible? [ ] yes [ ] no - if no, describe the migration path for clients:
+## Supabase changes
 
-## Database migrations
+<!-- New/changed tables, columns, RLS policies, Storage buckets, or Edge Functions. Delete if none. -->
 
-<!-- Delete if no schema change. -->
-
-- [ ] Sequelize migration included (`backend/migrations/*.cjs`)
-- [ ] Migration is reversible (`down` implemented and tested)
-- [ ] Safe on existing data (no destructive change without a backfill plan)
+- [ ] SQL migration included and run against a dev/staging Supabase project
+- [ ] RLS policies added/updated for any new or changed table
+- [ ] Migration is safe on existing data (no destructive change without a backfill plan)
+- [ ] Realtime enabled on new tables that need it (see `alter publication supabase_realtime add table ...`)
 
 ## Config / environment
 
-<!-- New or changed env vars, secrets, or infra. -->
+<!-- New or changed env vars, secrets, or native config. -->
 
-- [ ] New env vars documented in the relevant `.env.example`
+- [ ] New env vars added to `.env.example` (never commit real values)
 - [ ] No secrets or credentials committed
+- [ ] `app.config.ts` updated if a new native plugin or permission was added
+- [ ] New native module added — noted below so reviewers know a rebuild (`expo run:android`) is required, not just `expo start`
 
 ## How to test
 
-<!-- Steps for the reviewer: setup, requests/commands, expected result, edge cases. -->
+<!-- Steps for the reviewer: setup, commands, expected result, edge cases. -->
 
 1.
 
 ## Checklist
 
 - [ ] Self-reviewed the diff
-- [ ] Lint & type checks pass locally (`npm run lint`, `npm run typecheck`)
-- [ ] `npm test` passes / tests added or updated where relevant
+- [ ] Type check passes locally (`npx tsc --noEmit`)
+- [ ] Lint passes locally (`npm run lint --if-present`)
+- [ ] Tests pass / added or updated where relevant (`npm test --if-present`)
 - [ ] PR title follows Conventional Commits
 - [ ] Updated docs / README if behaviour or setup changed
 
