@@ -1,0 +1,27 @@
+name: Enforce Branch Flow
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  check-source-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR source matches allowed flow
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const base = context.payload.pull_request.base.ref;
+            const head = context.payload.pull_request.head.ref;
+
+            const allowed = {
+              staging: ['dev'],
+              prod: ['staging'],
+            };
+
+            if (allowed[base] && !allowed[base].includes(head)) {
+              core.setFailed(
+                `PRs into "${base}" must come from "${allowed[base].join(' or ')}" — this PR is from "${head}".`
+              );
+            }
