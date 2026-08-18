@@ -2,7 +2,10 @@ name: PR Template Router
 
 on:
   pull_request:
-    types: [opened]
+    types: [opened, edited, synchronize]
+
+permissions:
+  pull-requests: write
 
 jobs:
   route-template:
