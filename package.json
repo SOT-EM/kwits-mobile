@@ -25,6 +25,7 @@
   "devDependencies": {
     "@types/react": "~19.2.2",
     "dotenv": "^17.4.2",
+    "supabase": "^2.115.0",
     "typescript": "~6.0.3"
   },
   "scripts": {

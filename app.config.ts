@@ -3,13 +3,13 @@ import { ExpoConfig, ConfigContext } from "expo/config";
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: "tripsplit",
-  slug: "tripsplit",
+  name: "kwits",
+  slug: "kwits",
   version: "1.0.0",
   orientation: "portrait",
   icon: "./assets/icon.png",
   userInterfaceStyle: "light",
-  scheme: "tripsplit",
+  scheme: "kwits",
   plugins: ["expo-router"],
   ios: {
     supportsTablet: true,
