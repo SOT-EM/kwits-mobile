@@ -1,0 +1,27 @@
+name: PR Title Check
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  check-title:
+    name: Validate PR title format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          pattern='^(feat|fix|chore|refactor|docs|test|workflow): .+'
+          if [[ ! "$PR_TITLE" =~ $pattern ]]; then
+            echo "PR title does not match the required format."
+            echo ""
+            echo "Expected format: <type>: <description>"
+            echo "Example:         feat: sample task"
+            echo ""
+            echo "Allowed types: feat, fix, chore, refactor, docs, test"
+            echo "Your title:    $PR_TITLE"
+            exit 1
+          fi
+          echo "PR title is valid: $PR_TITLE"
