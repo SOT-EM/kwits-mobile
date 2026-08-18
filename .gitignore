@@ -43,5 +43,5 @@ yarn-error.*
 /ios
 /android
 
-.claude/*
+.claude
 .vscode
