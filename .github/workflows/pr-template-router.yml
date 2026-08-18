@@ -2,7 +2,7 @@ name: PR Template Router
 
 on:
   pull_request:
-    types: [opened, edited]
+    types: [opened, edited, synchronize]
 
 permissions:
   pull-requests: write
