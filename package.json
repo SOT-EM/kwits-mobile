@@ -5,6 +5,7 @@
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
     "@maplibre/maplibre-react-native": "^11.3.6",
+    "@react-native-async-storage/async-storage": "^2.2.0",
     "@supabase/supabase-js": "^2.112.3",
     "@tanstack/react-query": "^5.101.4",
     "expo": "~57.0.14",
@@ -22,10 +23,12 @@
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
     "react-native-url-polyfill": "^4.0.0",
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "babel-plugin-module-resolver": "^5.0.3",
     "dotenv": "^17.4.2",
     "supabase": "^2.115.0",
     "typescript": "~6.0.3"
@@ -33,8 +36,14 @@
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
+    "android:dev": "expo start --dev-client --clear --android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "ios:dev": "expo start --dev-client --clear --ios",
+    "web": "expo start --web",
+    "db:migrate": "supabase db push",
+    "db:migrate:local": "supabase db reset",
+    "db:migrate:status": "supabase migration list",
+    "db:migrate:new": "supabase migration new"
   },
   "engines": {
     "node": ">=20.18.0 <21.0.0"

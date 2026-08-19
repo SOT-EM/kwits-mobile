@@ -1,19 +1,32 @@
-import { Stack } from "expo-router";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { StatusBar } from "expo-status-bar";
-
-const queryClient = new QueryClient();
+import { Stack, useRouter, useSegments } from "expo-router";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { useEffect } from "react";
+import { useOnboardingStore } from "../src/lib/onboarding";
 
 export default function RootLayout() {
+    const { isReady, hasOnboarded, checkStatus } = useOnboardingStore();
+    const router = useRouter();
+    const segments = useSegments();
+
+    useEffect(() => {
+        checkStatus();
+    }, []);
+
+    useEffect(() => {
+        if (!isReady) return;
+        const inOnboarding = segments[0] === "onboarding";
+        if (!hasOnboarded && !inOnboarding) {
+            router.replace("/onboarding");
+        } else if (hasOnboarded && inOnboarding) {
+            router.replace("/(tabs)");
+        }
+    }, [isReady, hasOnboarded, segments]);
+
+    if (!isReady) return null;
+
     return (
-        <QueryClientProvider client={queryClient}>
-            <StatusBar style="auto" />
-            <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="(auth)" />
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="plans" />
-                <Stack.Screen name="profile" />
-            </Stack>
-        </QueryClientProvider>
+        <SafeAreaProvider>
+            <Stack screenOptions={{ headerShown: false }} />
+        </SafeAreaProvider>
     );
 }
