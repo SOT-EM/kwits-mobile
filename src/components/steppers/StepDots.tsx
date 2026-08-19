@@ -1,20 +1,21 @@
 // components/StepDots.tsx
-import { View } from "react-native";
+import Animated, { useAnimatedStyle, withTiming } from "react-native-reanimated";
+
+function Dot({ isActive }: { isActive: boolean }) {
+    const animatedStyle = useAnimatedStyle(() => ({
+        width: withTiming(isActive ? 24 : 8, { duration: 200 }),
+        backgroundColor: withTiming(isActive ? "#111111" : "#dddddd", { duration: 200 }),
+    }));
+
+    return <Animated.View className="h-1 rounded-full" style={animatedStyle} />;
+}
 
 export function StepDots({ active, total }: { active: number; total: number }) {
     return (
-        <View style={{ flexDirection: "row", gap: 6 }}>
+        <Animated.View className="flex-row gap-1.5">
             {Array.from({ length: total }).map((_, i) => (
-                <View
-                    key={i}
-                    style={{
-                        width: 24,
-                        height: 4,
-                        borderRadius: 2,
-                        backgroundColor: i === active ? "#111" : "#ddd",
-                    }}
-                />
+                <Dot key={i} isActive={i === active} />
             ))}
-        </View>
+        </Animated.View>
     );
 }

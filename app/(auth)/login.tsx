@@ -5,13 +5,13 @@ export default function LoginScreen() {
     const router = useRouter();
 
     return (
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <View className="flex-1 items-center justify-center">
             <Text>Login Screen</Text>
             <Pressable
                 onPress={() => router.push("/(tabs)")}
-                style={{ marginTop: "auto", backgroundColor: "#111", padding: 16, borderRadius: 12 }}
+                className="mt-auto rounded-xl bg-neutral-900 p-4"
             >
-                <Text style={{ color: "#fff", textAlign: "center" }}>Next</Text>
+                <Text className="text-center text-white">Next</Text>
             </Pressable>
         </View>
     );

@@ -3,8 +3,8 @@ import { Link } from "expo-router";
 
 export default function TripsScreen() {
     return (
-        <View style={{ flex: 1, padding: 16 }}>
-            <Text style={{ fontSize: 20, fontWeight: "600", marginBottom: 12 }}>My Trips</Text>
+        <View className="flex-1 p-4">
+            <Text className="mb-3 text-xl font-semibold">My Trips</Text>
             <Link href="/plans/create">Create a new trip</Link>
         </View>
     );

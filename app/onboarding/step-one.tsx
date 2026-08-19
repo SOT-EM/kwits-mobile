@@ -7,16 +7,16 @@ export default function StepOne() {
     const router = useRouter();
 
     return (
-        <View style={{ flex: 1, padding: 24 }}>
+        <View className="flex-1 p-6">
             <StepDots active={0} total={3} />
-            <Text style={{ fontSize: 24, fontWeight: "600", marginTop: 40 }}>
+            <Text className="mt-10 text-2xl font-semibold">
                 Welcome to the app
             </Text>
             <Pressable
                 onPress={() => router.push("/onboarding/step-two")}
-                style={{ marginTop: "auto", backgroundColor: "#111", padding: 16, borderRadius: 12 }}
+                className="mt-auto rounded-xl bg-neutral-900 p-4"
             >
-                <Text style={{ color: "#fff", textAlign: "center" }}>Next</Text>
+                <Text className="text-center text-white">Next</Text>
             </Pressable>
         </View>
     );

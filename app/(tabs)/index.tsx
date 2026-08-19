@@ -14,8 +14,8 @@ export default function DashboardScreen() {
     };
 
     return (
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
-            <Text style={{ fontSize: 20, fontWeight: "600" }}>Dashboard</Text>
+        <ScrollView className="flex-1" contentContainerClassName="p-4">
+            <Text className="text-xl font-semibold">Dashboard</Text>
 
             <Pressable onPress={resetOnboarding}>
                 <Text>Reset onboarding (dev only)</Text>
