@@ -7,14 +7,16 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   slug: "kwits",
   version: "1.0.0",
   orientation: "portrait",
+  owner: "kopibaras-den",
   icon: "./assets/icon.png",
   userInterfaceStyle: "light",
   scheme: "kwits",
-  plugins: ["expo-router"],
   ios: {
     supportsTablet: true,
+    bundleIdentifier: "com.suden.kwits",
   },
   android: {
+    package: "com.suden.kwits",
     adaptiveIcon: {
       backgroundColor: "#E6F4FE",
       foregroundImage: "./assets/android-icon-foreground.png",
@@ -34,4 +36,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       projectId: process.env.EAS_PROJECT_ID,
     },
   },
+  plugins: [
+    "expo-router",
+    [
+      "expo-build-properties",
+      {
+        android: {
+          multiDexEnabled: true,
+        },
+      },
+    ],
+  ],
 });
