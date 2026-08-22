@@ -43,3 +43,23 @@ jobs:
             exit 1
           fi
           echo "Branch is up to date with dev."
+
+  check-no-bypass-commits:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.base.ref == 'staging' || github.event.pull_request.base.ref == 'prod'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Verify base branch has no commits outside this flow
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          git fetch origin "$BASE_REF"
+          if ! git merge-base --is-ancestor "origin/$BASE_REF" HEAD; then
+            echo "\"$BASE_REF\" has commits that aren't in this PR's source branch — it may have been pushed to directly, bypassing the dev -> staging -> prod flow. Investigate before merging."
+            exit 1
+          fi
+          echo "\"$BASE_REF\" has no commits outside this PR's source branch."
