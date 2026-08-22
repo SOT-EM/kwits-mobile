@@ -13,10 +13,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   scheme: "kwits",
   ios: {
     supportsTablet: true,
-    bundleIdentifier: "com.suden.kwits",
+    bundleIdentifier: "com.kwits.sotm",
   },
   android: {
-    package: "com.suden.kwits",
+    package: "com.kwits.sotm",
     adaptiveIcon: {
       backgroundColor: "#E6F4FE",
       foregroundImage: "./assets/android-icon-foreground.png",
@@ -29,9 +29,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     favicon: "./assets/favicon.png",
   },
   extra: {
-    supabaseUrl: process.env.SUPABASE_URL,
-    supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
     mapTilerApiKey: process.env.MAPTILER_API_KEY,
+    apiBaseUrl: process.env.API_BASE_URL,
     eas: {
       projectId: process.env.EAS_PROJECT_ID,
     },
@@ -43,6 +42,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       {
         android: {
           multiDexEnabled: true,
+          // Android blocks plaintext HTTP by default on recent API levels, which
+          // silently breaks calls to kwits-api at http://10.0.2.2:8080 during local
+          // development. LOCAL DEVELOPMENT ONLY -- a deployed API must be HTTPS, and
+          // a shipped build should not rely on this flag.
+          usesCleartextTraffic: true,
         },
       },
     ],
