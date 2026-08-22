@@ -1,10 +1,17 @@
-# How to debug kwits: Android native build issues on Windows
+# How to debug kwits (mobile)
 
-A troubleshooting runbook for local Android native builds on Windows (`npx expo run:android` and the underlying Gradle/CMake toolchain). Each entry below is a real failure encountered while getting this project building natively on Windows, in the order they tend to appear on a fresh Windows setup.
+A troubleshooting runbook, in two parts:
 
-**How to use this:** Ctrl+F the exact error text you're seeing, jump to that section, apply the fix. Root causes and fixes are verified against this repo's actual config as of the time this doc was written — if something has since changed (see the "Current repo state" notes inline), trust the repo over this doc.
+- **Part 1 (Problems 1-9)** — getting a native Android build to compile on Windows (`npx expo run:android` and the underlying Gradle/CMake toolchain). Each entry is a real failure encountered while getting this project building natively, in the order they tend to appear on a fresh Windows setup.
+- **Part 2 (Problems 10-13)** — the app runs, but can't talk to [kwits-api](../../kwits-api). These all look like a broken network and none of them are.
+
+**How to use this:** Ctrl+F the exact error text you're seeing, jump to that section, apply the fix. Root causes and fixes are verified against this repo's actual config as of this revision — if something has since changed (see the "Current repo state" notes inline), trust the repo over this doc.
+
+Backend-side failures — the API not starting, database mismatches, token validation — are in [kwits-api/docs/HOW_TO_DEBUG.md](../../kwits-api/docs/HOW_TO_DEBUG.md).
 
 ---
+
+# Part 1: Android native builds on Windows
 
 ## Problem 1: `create-expo-app` fails with "Could not parse JSON returned from npm.cmd pack"
 
@@ -59,7 +66,7 @@ echo "legacy-peer-deps=true" > .npmrc
 **Symptom:**
 ```
 env: load .env
-env: export SUPABASE_URL SUPABASE_ANON_KEY MAPTILER_API_KEY
+env: export MAPTILER_API_KEY EAS_PROJECT_ID API_BASE_URL
 ```
 ...then the process just exits, no stack trace, no error message.
 
@@ -71,9 +78,8 @@ Recommended fix — only include the `eas` key when the env var is actually set:
 
 ```ts
 extra: {
-  supabaseUrl: process.env.SUPABASE_URL,
-  supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
   mapTilerApiKey: process.env.MAPTILER_API_KEY,
+  apiBaseUrl: process.env.API_BASE_URL,
   ...(process.env.EAS_PROJECT_ID
     ? { eas: { projectId: process.env.EAS_PROJECT_ID } }
     : {}),
@@ -111,11 +117,13 @@ Please add the following to your Expo config:
 **Current repo state:** already applied. `app.config.ts` has:
 
 ```ts
-android: { package: "com.suden.kwits", ... },
-ios: { ..., bundleIdentifier: "com.suden.kwits" },
+android: { package: "com.kwits.sotm", ... },
+ios: { ..., bundleIdentifier: "com.kwits.sotm" },
 ```
 
-If you fork this project or rename it, you'll need to pick your own reverse-domain identifier here — don't just copy `com.suden.kwits`.
+> These were `com.suden.kwits` when this doc was written and were renamed to `com.kwits.sotm`. A package rename is native config, so it needs a `prebuild --clean` + rebuild to take effect, and it changes the app's identity on the device — the old build does not upgrade in place, it installs alongside as a separate app.
+
+If you fork this project or rename it, you'll need to pick your own reverse-domain identifier here — don't just copy `com.kwits.sotm`.
 
 ## Problem 5: Gradle daemon crashes with a JVM fatal error (`EXCEPTION_ACCESS_VIOLATION`) during Kotlin compilation
 
@@ -244,6 +252,102 @@ npx expo run:android
 ```
 
 > **Current repo state:** `app.config.ts`'s `expo-build-properties` plugin still sets `android.multiDexEnabled: true`. It wasn't the actual fix for this crash (see cause above), but it's harmless to leave in place and hasn't been removed — don't spend time chasing multidex config if you hit this error again; go straight to the cache wipe.
+>
+> That same plugin block now also sets `android.usesCleartextTraffic: true` for local kwits-api calls (Problem 11). Both are native config, so a cache wipe followed by `prebuild --clean` re-applies them from `app.config.ts` — you never need to hand-edit anything under `android/`.
+
+---
+
+# Part 2: talking to kwits-api
+
+The problems above are about getting a native Android build to compile at all. The ones below only appear once the app is running and trying to reach the backend. All of them look like "the network is broken" and none of them are.
+
+Read the error text first: `src/lib/api.ts` deliberately puts the URL it actually tried into the message, and distinguishes "could not reach" (the request never completed) from a real HTTP status.
+
+## Problem 10: "Could not reach kwits-api at http://localhost:8080" on an Android emulator
+
+**Symptom:** login and the Dashboard both fail immediately. The message names `localhost` or `127.0.0.1`.
+
+**Cause:** inside an Android emulator, `localhost` is the emulator's own virtual device, not your host machine. The API is listening on the host, so the emulator is dialling itself and finding nothing.
+
+**Fix:** in `.env`, use the emulator's host alias, then restart Metro with the cache cleared (config is read at resolution time, not hot-reloaded):
+
+```
+API_BASE_URL=http://10.0.2.2:8080
+```
+
+```bash
+npx expo start --dev-client --clear
+```
+
+`10.0.2.2` is a fixed alias, not a real IP. A physical device needs your machine's LAN IP instead — it is a separate machine on your network and has no such alias.
+
+**Confirm the API itself is fine before changing anything**, from your host terminal:
+
+```bash
+curl -i http://localhost:8080/plans
+```
+
+A `401` means the API is up and the route is protected — that is the healthy answer. Connection refused means the backend isn't running; go to [kwits-api/docs/HOW_TO_RUN.md](../../kwits-api/docs/HOW_TO_RUN.md).
+
+## Problem 11: "Could not reach kwits-api" even though the URL is right and curl works
+
+**Symptom:** `curl http://localhost:8080/plans` returns 401 from your host, `API_BASE_URL` is correctly `http://10.0.2.2:8080`, and the app still cannot connect. No useful error beyond the reachability message.
+
+**Cause:** Android blocks cleartext (non-HTTPS) traffic by default on recent API levels. The request is being dropped by the platform before it leaves the device. `http://10.0.2.2:8080` has no TLS, so it is exactly what that policy blocks.
+
+**Fix:** `app.config.ts` already sets this under the `expo-build-properties` plugin:
+
+```ts
+android: {
+  multiDexEnabled: true,
+  usesCleartextTraffic: true,
+},
+```
+
+The catch is that this is **native** config. If your installed build predates that setting, the flag is not in the APK on your device and a Metro restart will not put it there:
+
+```bash
+npx expo prebuild --clean
+npx expo run:android
+```
+
+**How to tell this apart from Problem 10:** Problem 10 fails for a bad address, so fixing `.env` fixes it. This one fails with a correct address, and only a rebuild fixes it. If you have changed `.env` correctly and cleared the Metro cache and it still fails, stop editing `.env` and rebuild.
+
+This is a local-development concession only. A deployed API should use HTTPS; a shipped build must not depend on this flag.
+
+## Problem 12: login succeeds, then the Dashboard says the session expired
+
+**Symptom:** signing in works and navigates to the Dashboard, but the plans list immediately reports an expired session and you are effectively signed out.
+
+**Cause:** the token was accepted by `/auth/login` (which is public and just proxies to Supabase) but rejected by `/plans` (which validates it). The app is behaving correctly — `src/lib/auth.ts` clears a token the API answered `401` for, rather than keeping a token that doesn't work. The fault is almost always on the API side: `SUPABASE_JWT_SECRET` in kwits-api's `.env` doesn't match the secret Supabase actually signed with.
+
+**Fix:** this is diagnosed in kwits-api, not here. See Problem 3 in [kwits-api/docs/HOW_TO_DEBUG.md](../../kwits-api/docs/HOW_TO_DEBUG.md). The quick check, from your host:
+
+```bash
+TOKEN=$(curl -s -X POST http://localhost:8080/auth/login   -H 'Content-Type: application/json'   -d '{"email":"you@example.com","password":"yourpassword"}' | jq -r .accessToken)
+
+curl -i http://localhost:8080/plans -H "Authorization: Bearer $TOKEN"
+```
+
+If that also returns 401 outside the app, the app is not the problem.
+
+## Problem 13: "API_BASE_URL is not set. Copy .env.example to .env and restart Expo."
+
+**Symptom:** that exact message, thrown before any request goes out.
+
+**Cause:** `Constants.expoConfig.extra.apiBaseUrl` resolved to empty. Either `.env` is missing, it lacks `API_BASE_URL`, or Metro is serving a config resolved before you added it.
+
+**Fix:** confirm what Expo actually resolved, rather than trusting the file:
+
+```bash
+npx expo config --type public
+```
+
+Check `extra.apiBaseUrl` in the output. If it's empty there, the problem is `.env` (it must be at the repo root — `app.config.ts` loads it via `dotenv/config`). If it's correct there but the app still throws, Metro is stale:
+
+```bash
+npx expo start --dev-client --clear
+```
 
 ---
 

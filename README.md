@@ -2,34 +2,44 @@
 
 A collaborative travel expense-splitting mobile app. A host creates a trip, invites peers, and expenses are logged with receipts (OCR or manual entry). Each expense is split either equally or with custom per-person amounts, and repayment is tracked through a proof-upload-and-confirm loop. No real money moves through the app — all amounts are Philippine Peso (PHP) only, and settlement happens off-app (e.g. GCash, bank transfer) with a photo of the payment as proof.
 
+This repo is the **mobile client only**. It talks to exactly one backend:
+
+```
+kwits-mobile  ->  kwits-api  ->  Supabase (Auth + Postgres)
+```
+
+The app never calls Supabase directly — not for auth, not for storage, not for data. Everything goes through [kwits-api](../kwits-api), which is the only service holding Supabase credentials. The two repos are cloned as siblings under one folder; see [HOW_TO_SETUP.md](./docs/HOW_TO_SETUP.md).
+
 ## Tech stack
 
 | Layer | Technology |
 | --- | --- |
 | App framework | React Native (`0.86.2`) + Expo (`~57.0.14`), file-based routing via Expo Router |
-| Data fetching / cache | TanStack Query (`@tanstack/react-query`) |
+| Backend | [kwits-api](../kwits-api) (Spring Boot), reached over HTTP via `src/lib/api.ts` |
+| Client state | Zustand (`zustand`) + AsyncStorage for the persisted auth token |
+| Styling | NativeWind (Tailwind for React Native) |
 | Forms & validation | React Hook Form + Zod |
-| Backend | Supabase (Postgres + Auth + Storage + Realtime) |
 | Maps | MapLibre (`@maplibre/maplibre-react-native`) + MapTiler tiles |
 | Receipt capture | `expo-camera` + `expo-image-picker` |
 | Language | TypeScript (strict mode) |
 
-Note: receipt OCR is modeled in the data layer (`EntryMethod: "ocr" | "manual"` in `src/types/expense.ts`), but no OCR library (e.g. Google ML Kit) is wired into the codebase yet — see the summary at the end of setup for details.
+Two dependencies are installed but not yet wired into anything: `@tanstack/react-query` (no `QueryClientProvider` exists yet — the current screens fetch with plain `useEffect`) and receipt OCR, which is modeled in the data layer (`EntryMethod: "ocr" | "manual"` in `src/types/expense.ts`) with no OCR library attached.
 
 ## Project structure
 
 ```
 app/                                  Expo Router routes (file-based)
-├── _layout.tsx                       Root stack: (auth), (tabs), plans, profile
+├── _layout.tsx                       Root stack; restores the stored session on launch
 ├── (auth)/
 │   ├── _layout.tsx
-│   ├── login.tsx
-│   └── register.tsx
+│   ├── login.tsx                     Email/password form, posts to kwits-api
+│   └── register.tsx                  Placeholder
 ├── (tabs)/                           Bottom tab navigator
 │   ├── _layout.tsx
-│   ├── index.tsx                     Dashboard tab
+│   ├── index.tsx                     Dashboard tab; fetches GET /plans
 │   ├── trips.tsx                     Trips tab
 │   └── profile.tsx                   Profile tab
+├── onboarding/                       First-run flow (index + 3 steps)
 ├── plans/
 │   ├── create/index.tsx              Create a travel plan
 │   └── [planId]/
@@ -45,15 +55,25 @@ app/                                  Expo Router routes (file-based)
 
 src/
 ├── lib/
-│   └── supabase.ts                   Supabase client (reads config from app.config.ts extra)
+│   ├── api.ts                        kwits-api client; the app's only network boundary
+│   ├── auth.ts                       Auth store: token + user, persisted to AsyncStorage
+│   └── onboarding.ts                 Onboarding-completed flag
+├── features/                         Per-feature components/hooks (scaffolded, empty)
+│   ├── auth/  dashboard/  expenses/  payments/  plans/
+├── components/
+│   ├── steppers/StepDots.tsx         Onboarding step indicator
+│   └── ui/                           (empty)
+├── hooks/                            (empty)
 ├── types/                            Domain types: User, TravelPlan, Expense, OwerBalance, PaymentProof, UserPaymentQR
 └── utils/
     └── split.ts                      Equal/custom expense-split calculations
-
-supabase/
-├── config.toml                       Local Supabase CLI config
-└── migrations/                       Database schema migrations
 ```
+
+The database schema and the Supabase CLI project live in [kwits-api](../kwits-api), which owns them. There is no `supabase/` folder here and no database tooling in `package.json`.
+
+## Configuration
+
+One variable does the work: `API_BASE_URL` in `.env`, surfaced to the app through `app.config.ts` as `Constants.expoConfig.extra.apiBaseUrl`. See `.env.example` for the full list and for why the Android emulator needs `10.0.2.2` instead of `localhost`.
 
 ## Branching model
 
@@ -63,7 +83,17 @@ PRs only — no direct pushes to `dev`, `staging`, or `prod`. The flow between b
 - **`staging`** — a batch of `dev` changes promoted for QA. Only PRs from `dev` are accepted here.
 - **`prod`** — a verified `staging` build promoted to production. Only PRs from `staging` are accepted here.
 
+## Documentation
+
+| Doc | What it covers |
+| --- | --- |
+| [docs/HOW_TO_SETUP.md](./docs/HOW_TO_SETUP.md) | Fresh machine to a working build: Node, Android SDK, cloning both repos, `.env` |
+| [docs/HOW_TO_RUN.md](./docs/HOW_TO_RUN.md) | The day-to-day dev loop, native rebuilds, EAS builds, CI checks, PR flow |
+| [docs/HOW_TO_DEBUG.md](./docs/HOW_TO_DEBUG.md) | Troubleshooting runbook: Android native build failures on Windows, and kwits-api connectivity |
+
+Backend setup and running lives in [kwits-api/docs](../kwits-api/docs).
+
 ## Getting started
 
-- New to the project? Follow [HOW_TO_SETUP.md](./HOW_TO_SETUP.md) to configure your machine.
-- Already set up? See [HOW_TO_RUN.md](./HOW_TO_RUN.md) for the day-to-day dev loop, builds, and PR flow.
+- New to the project? Follow [docs/HOW_TO_SETUP.md](./docs/HOW_TO_SETUP.md) to configure your machine.
+- Already set up? See [docs/HOW_TO_RUN.md](./docs/HOW_TO_RUN.md) for the day-to-day dev loop, builds, and PR flow.
