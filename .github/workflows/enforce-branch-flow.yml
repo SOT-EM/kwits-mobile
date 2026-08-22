@@ -25,3 +25,21 @@ jobs:
                 `PRs into "${base}" must come from "${allowed[base].join(' or ')}" — this PR is from "${head}".`
               );
             }
+
+  check-up-to-date-with-dev:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.base.ref == 'dev'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Verify branch is up to date with dev
+        run: |
+          git fetch origin dev
+          if ! git merge-base --is-ancestor origin/dev HEAD; then
+            echo "This branch is behind dev. Merge or rebase the latest dev into your branch before this PR can be merged."
+            exit 1
+          fi
+          echo "Branch is up to date with dev."
