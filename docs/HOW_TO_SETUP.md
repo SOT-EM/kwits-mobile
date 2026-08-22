@@ -1,6 +1,8 @@
-# How to set up kwits
+# How to set up kwits (mobile)
 
-This guide takes you from a fresh machine to a working local build. It assumes zero prior context about the project.
+This guide takes you from a fresh machine to a working local build of the mobile app. It assumes zero prior context about the project.
+
+**Scope:** this repo is the mobile client. It does not talk to Supabase and does not need the Supabase CLI, Docker, or a Supabase account. If you also need to run the backend locally, do this guide first, then [kwits-api/docs/HOW_TO_SETUP.md](../../kwits-api/docs/HOW_TO_SETUP.md).
 
 ## 1. Prerequisites
 
@@ -46,58 +48,44 @@ You don't need the full Android Studio IDE workflow — just its SDK, so you can
    sdkmanager --licenses
    ```
 
-## 2. Windows-specific: install the Supabase CLI via Scoop, not npm
+## 2. Clone both repos as siblings
 
-On Windows, do **not** install the Supabase CLI as an npm package. The npm-distributed build bundles a Bun runtime that segfaults on many Windows machines. Use [Scoop](https://scoop.sh/) instead:
-
-```powershell
-scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
-scoop install supabase
-```
-
-Verify it works:
-
-```powershell
-supabase --version
-```
-
-On **macOS**, install via Homebrew:
+kwits is two independent repos with separate histories and remotes. They are not a monorepo — there is no git repo at the parent level. Cloning them side by side is purely a local convenience so both codebases are open in one editor window, and it makes the relative links in these docs (`../kwits-api`) resolve:
 
 ```bash
-brew install supabase/tap/supabase
+mkdir kwits && cd kwits
+git clone <KWITS_MOBILE_REPO_URL> kwits-mobile
+git clone <KWITS_API_REPO_URL>    kwits-api
 ```
 
-On **Linux**, or on macOS/Linux generally, you can also add it as a dev dependency via npm:
+Resulting layout:
 
-```bash
-npm install supabase --save-dev
+```
+kwits/
+├── kwits-mobile/    this repo
+└── kwits-api/       Spring Boot backend
 ```
 
-> Note: `package.json` currently lists `supabase` (`^2.115.0`) as an npm devDependency. On Windows, prefer the Scoop-installed binary over `npx supabase` for the reason above.
+Nothing breaks if you name the parent folder something else or put the repos elsewhere — only the relative doc links assume this shape.
 
-## 3. Clone and install dependencies
+## 3. Install dependencies
 
 ```bash
-git clone <YOUR_FORK_OR_REPO_URL>
-cd kwits
+cd kwits-mobile
 npm install --legacy-peer-deps
 ```
 
 `--legacy-peer-deps` is required because Expo Router's bundled web tooling (Radix UI packages) has peer dependency ranges that conflict with this project's React version.
 
-To avoid needing to remember the flag on every install, create a `.npmrc` at the project root:
-
-```
-legacy-peer-deps=true
-```
+To avoid needing to remember the flag on every install, create a `.npmrc` at the repo root:
 
 ```bash
 echo "legacy-peer-deps=true" > .npmrc
 ```
 
-## 4. Environment variables
+> **Current repo state:** no `.npmrc` is committed. Until one is, pass `--legacy-peer-deps` explicitly on every `npm install`.
 
-Copy the example file:
+## 4. Environment variables
 
 ```bash
 cp .env.example .env
@@ -105,68 +93,68 @@ cp .env.example .env
 
 Fill in `.env`:
 
-| Variable | Where to get it |
+| Variable | Where to get it | Required? |
+| --- | --- | --- |
+| `API_BASE_URL` | The address of your running kwits-api. `http://10.0.2.2:8080` for an Android emulator — see below. | Yes |
+| `MAPTILER_API_KEY` | [MapTiler Cloud](https://cloud.maptiler.com/) > Account > Keys (free tier, no card required) | Only once map screens are built |
+| `EAS_PROJECT_ID` | Expo dashboard > your project > project ID | Only for EAS builds |
+
+These reach the app through `app.config.ts`, which exposes them as `Constants.expoConfig.extra.apiBaseUrl` / `.mapTilerApiKey`. Nothing else in the app reads `process.env` directly.
+
+There are **no Supabase variables here.** `SUPABASE_URL` and `SUPABASE_ANON_KEY` used to live in this file; they moved to kwits-api when the backend split out. If you find them in an old `.env`, delete them — nothing reads them.
+
+### Which address to use for `API_BASE_URL`
+
+There is no single value that works everywhere, because "localhost" means something different on each target:
+
+| Running the app on | Value |
 | --- | --- |
-| `SUPABASE_URL` | Supabase dashboard > your project > **Settings > API** > Project URL |
-| `SUPABASE_ANON_KEY` | Supabase dashboard > your project > **Settings > API** > Project API keys > **publishable** (`anon`) key |
-| `MAPTILER_API_KEY` | [MapTiler Cloud](https://cloud.maptiler.com/) > Account > Keys (free tier, no card required) |
+| Android emulator | `http://10.0.2.2:8080` |
+| iOS simulator, or Expo web | `http://localhost:8080` |
+| A physical phone | `http://<your machine's LAN IP>:8080` |
 
-**Never put the Supabase `service_role` / secret key in `.env`.** Only use the publishable (`anon`) key — this file ends up bundled into a client app.
+`10.0.2.2` is not a real IP address. It is a fixed alias the Android emulator provides for the host machine, because inside the emulator `localhost` refers to the emulator's own virtual device. This is the single most common source of lost time on this project — see [HOW_TO_RUN.md](./HOW_TO_RUN.md#the-android-emulator-networking-gotcha).
 
-> `.env.example` in this repo currently only lists `SUPABASE_URL` and `SUPABASE_ANON_KEY`. `MAPTILER_API_KEY` is read by `app.config.ts` but is not yet in `.env.example` — add it yourself as shown above.
+`.env` is gitignored. Never commit it.
 
-## 5. Supabase project setup
-
-1. Create a project at [supabase.com/dashboard](https://supabase.com/dashboard) (or use an existing one).
-2. Log in and link the CLI to your project:
-
-   ```bash
-   supabase login
-   supabase link --project-ref <YOUR_SUPABASE_PROJECT_REF>
-   ```
-
-3. Apply the database migrations in `supabase/migrations/`:
-
-   ```bash
-   supabase db push
-   ```
-
-   > The current migration file (`supabase/migrations/20260818202046_initial_schema.sql`) is empty — there's no schema defined yet. Once the schema exists, this is the command that applies it.
-
-4. Enable **Realtime** on any tables that need live updates (e.g. balances or payment proofs, once those tables exist) — Supabase dashboard > **Table Editor** > select the table > **Realtime** toggle, or add the table to the `supabase_realtime` publication in a migration.
-
-5. Set up **Storage** buckets for receipt images and payment QR codes — Supabase dashboard > **Storage** > **New bucket**:
-
-   - `receipts` — private bucket; add a policy allowing `INSERT`/`SELECT` for `authenticated` users on their own uploads.
-   - `payment-qr-codes` — private bucket; add a policy allowing `INSERT`/`SELECT` for `authenticated` users on their own uploads.
-
-   > These bucket names are a suggestion based on the app's data model (`receiptImageUrl` on `Expense`/`PaymentProof`, `qrImageUrl` on `UserPaymentQR`) — they are not yet codified in a migration, so confirm naming with the team before relying on it elsewhere.
-
-## 6. GitHub access (multiple accounts)
+## 5. GitHub access (multiple accounts)
 
 If you manage more than one GitHub account (e.g. personal and work) on the same machine, use a dedicated SSH key and host alias instead of the default `github.com` host:
 
 ```bash
-ssh-keygen -t ed25519 -C "cj@hirolabz.com" -f ~/.ssh/id_ed25519_personal
+ssh-keygen -t ed25519 -C "you@example.com" -f ~/.ssh/id_ed25519_work
 ```
 
-Add the public key (`~/.ssh/id_ed25519_personal.pub`) to your GitHub account under **Settings > SSH and GPG keys**.
+Add the public key (`~/.ssh/id_ed25519_work.pub`) to your GitHub account under **Settings > SSH and GPG keys**.
 
 Add an alias host in `~/.ssh/config`:
 
 ```
-Host github.com-personal
+Host github.com-work
   HostName github.com
   User git
-  IdentityFile ~/.ssh/id_ed25519_personal
+  IdentityFile ~/.ssh/id_ed25519_work
 ```
 
-Clone/set the remote using the alias host instead of `github.com`:
+Clone or set the remote using the alias host instead of `github.com`:
 
 ```bash
-git remote set-url origin git@github.com-personal:<YOUR_GITHUB_USERNAME>/kwits.git
+git remote set-url origin git@github.com-work:<ORG_OR_USER>/kwits-mobile.git
 ```
+
+The alias must match a `Host` entry in your SSH config, or git will fall back to your default key and fail with a permissions error against the repo you actually have access to.
+
+## 6. Verify the setup
+
+Before attempting a native build, confirm the JS side is sound:
+
+```bash
+npx tsc --noEmit          # should exit 0 with no output
+npx expo config --type public   # should print resolved config including extra.apiBaseUrl
+```
+
+If `extra.apiBaseUrl` comes back empty, `.env` is missing or wasn't picked up — `app.config.ts` loads it via `dotenv/config`, so it must exist at the repo root.
 
 ---
 
-Setup complete. Continue to [HOW_TO_RUN.md](./HOW_TO_RUN.md) to build and run the app.
+Setup complete. Continue to [HOW_TO_RUN.md](./HOW_TO_RUN.md) to build and run the app. If the app needs a live backend, start it first via [kwits-api/docs/HOW_TO_RUN.md](../../kwits-api/docs/HOW_TO_RUN.md).
