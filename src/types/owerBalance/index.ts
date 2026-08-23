@@ -1,5 +1,5 @@
-import type { UserId } from "./user";
-import type { ExpenseId } from "./expense";
+import type { UserId } from "../user";
+import type { ExpenseId } from "../expense";
 
 export type OwerBalanceStatus = "unpaid" | "partial" | "paid";
 

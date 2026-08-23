@@ -1,27 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 
-import { ApiError, api } from "./api";
+import type { AuthState, AuthUser } from "@/types";
+
+import { ApiError, api } from "../api";
 
 const TOKEN_KEY = "authToken";
 const USER_KEY = "authUser";
-
-export interface AuthUser {
-  id: string;
-  email: string;
-}
-
-interface AuthState {
-  /** False until restore() has run, so screens can avoid flashing the login form. */
-  isReady: boolean;
-  token: string | null;
-  user: AuthUser | null;
-  isLoading: boolean;
-  error: string | null;
-  restore: () => Promise<void>;
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => Promise<void>;
-}
 
 export const useAuthStore = create<AuthState>((set) => ({
   isReady: false,

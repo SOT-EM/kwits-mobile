@@ -4,13 +4,14 @@ import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useOnboardingStore } from "@/lib/onboarding";
 import { useAuthStore } from "@/lib/auth";
-import { api, ApiError, type TravelPlanResponse } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
+import type { TravelPlan } from "@/types";
 
 export default function DashboardScreen() {
     const router = useRouter();
     const { token, isReady, logout } = useAuthStore();
 
-    const [plans, setPlans] = useState<TravelPlanResponse[] | null>(null);
+    const [plans, setPlans] = useState<TravelPlan[] | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 

@@ -1,5 +1,13 @@
 import Constants from "expo-constants";
 
+import type {
+  ApiErrorBody,
+  LoginResponse,
+  PlanResponseBody,
+  RequestOptions,
+  TravelPlan,
+} from "@/types";
+
 /**
  * Client for kwits-api. This is the app's only network boundary -- Supabase is
  * reached through kwits-api, never directly from here.
@@ -16,20 +24,6 @@ export class ApiError extends Error {
     super(message);
     this.name = "ApiError";
   }
-}
-
-/** The error shape kwits-api's GlobalExceptionHandler returns. */
-interface ApiErrorBody {
-  status?: number;
-  message?: string;
-  fieldErrors?: Record<string, string>;
-}
-
-interface RequestOptions {
-  /** Bearer token to attach. Omit for the auth endpoints, which are public. */
-  token?: string | null;
-  body?: unknown;
-  method?: "GET" | "POST" | "PATCH" | "DELETE";
 }
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
@@ -85,35 +79,19 @@ function safeParse(text: string): unknown {
   }
 }
 
-export interface LoginResponse {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
-  user: { id: string; email: string } | null;
-}
-
 export const api = {
   login: (email: string, password: string) =>
-    request<LoginResponse>("/auth/login", { body: { email, password } }),
+    request<LoginResponse>("/v1/auth/login", { body: { email, password } }),
 
   signup: (email: string, password: string, name?: string) =>
-    request<LoginResponse>("/auth/signup", { body: { email, password, name } }),
+    request<LoginResponse>("/v1/auth/signup", { body: { email, password, name } }),
 
   /** Protected: requires the token returned by login. */
-  getPlans: (token: string | null) =>
-    request<TravelPlanResponse[]>("/plans", { token }),
+  getPlans: async (token: string | null): Promise<TravelPlan[]> => {
+    const plans = await request<PlanResponseBody[]>("/v1/plans", { token });
+    return plans.map((plan) => ({
+      ...plan,
+      estimatedCost: plan.estimatedCost ?? undefined,
+    }));
+  },
 };
-
-/**
- * What GET /plans returns. Field names match kwits-api's Plan entity; `estimatedCost`
- * is nullable there, so it is null rather than absent.
- */
-export interface TravelPlanResponse {
-  id: string;
-  hostId: string;
-  title: string;
-  startDate: string;
-  endDate: string;
-  estimatedCost: number | null;
-  createdAt: string;
-}

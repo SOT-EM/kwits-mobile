@@ -1,14 +1,9 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 
-const KEY = "hasCompletedOnboarding";
+import type { OnboardingState } from "@/types";
 
-interface OnboardingState {
-  isReady: boolean;
-  hasOnboarded: boolean;
-  checkStatus: () => Promise<void>;
-  complete: () => Promise<void>;
-}
+const KEY = "hasCompletedOnboarding";
 
 export const useOnboardingStore = create<OnboardingState>((set) => ({
   isReady: false,

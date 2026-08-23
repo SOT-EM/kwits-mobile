@@ -1,4 +1,4 @@
-import type { UserId } from "./user";
+import type { UserId } from "../user";
 
 export interface UserPaymentQR {
   id: string;
