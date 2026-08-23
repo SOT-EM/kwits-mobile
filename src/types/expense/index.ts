@@ -1,5 +1,5 @@
-import type { UserId } from "./user";
-import type { PlanId } from "./travelPlan";
+import type { UserId } from "../user";
+import type { PlanId } from "../travelPlan";
 
 export type ExpenseId = string;
 export type SplitType = "equal" | "custom";
