@@ -1,3 +1,11 @@
+import type {
+  LoginResponse,
+  ResendCodeResponse,
+  SignupInput,
+  SignupResponse,
+} from "../session";
+import type { TravelPlan } from "../travelPlan";
+
 /** The error shape kwits-api's GlobalExceptionHandler returns. */
 export interface ApiErrorBody {
   status?: number;
@@ -25,4 +33,13 @@ export interface PlanResponseBody {
   endDate: string;
   estimatedCost: number | null;
   createdAt: string;
+}
+
+/** Contract shared by the live client and the mock, so they stay swappable. */
+export interface KwitsApi {
+  login: (email: string, password: string) => Promise<LoginResponse>;
+  signup: (input: SignupInput) => Promise<SignupResponse>;
+  verifyOtp: (email: string, code: string) => Promise<LoginResponse>;
+  resendCode: (email: string) => Promise<ResendCodeResponse>;
+  getPlans: (token: string | null) => Promise<TravelPlan[]>;
 }

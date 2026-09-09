@@ -1,8 +1,6 @@
 import { Text, ScrollView, Pressable, View, ActivityIndicator } from "react-native";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useOnboardingStore } from "@/lib/onboarding";
 import { useAuthStore } from "@/lib/auth";
 import { api, ApiError } from "@/lib/api";
 import type { TravelPlan } from "@/types";
@@ -39,11 +37,6 @@ export default function DashboardScreen() {
     useEffect(() => {
         if (isReady) loadPlans();
     }, [isReady, loadPlans]);
-
-    const resetOnboarding = async () => {
-        await AsyncStorage.removeItem("hasCompletedOnboarding");
-        useOnboardingStore.setState({ hasOnboarded: false });
-    };
 
     return (
         <ScrollView className="flex-1" contentContainerClassName="p-4">
@@ -88,8 +81,10 @@ export default function DashboardScreen() {
                 </Text>
             )}
 
-            <Pressable onPress={resetOnboarding} className="mt-10">
-                <Text>Reset onboarding (dev only)</Text>
+            {/* logout() drops the token and clears the onboarding flag, so the
+                root layout routes back to Welcome and the flow can be re-walked. */}
+            <Pressable onPress={logout} className="mt-10">
+                <Text>Sign out and restart flow (dev only)</Text>
             </Pressable>
         </ScrollView>
     );

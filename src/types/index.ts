@@ -8,3 +8,5 @@ export * from "./session";
 export * from "./api";
 export * from "./auth";
 export * from "./onboarding";
+export * from "./icon";
+export * from "./ui";

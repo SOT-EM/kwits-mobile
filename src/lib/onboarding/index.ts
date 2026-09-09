@@ -18,4 +18,9 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
     await AsyncStorage.setItem(KEY, "true");
     set({ hasOnboarded: true });
   },
+
+  reset: async () => {
+    await AsyncStorage.removeItem(KEY);
+    set({ hasOnboarded: false });
+  },
 }));

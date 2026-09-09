@@ -2,29 +2,26 @@ import Constants from "expo-constants";
 
 import type {
   ApiErrorBody,
+  KwitsApi,
   LoginResponse,
   PlanResponseBody,
   RequestOptions,
+  ResendCodeResponse,
+  SignupResponse,
   TravelPlan,
 } from "@/types";
+
+import { ApiError } from "./error";
+import { mockApi } from "./mock";
 
 /**
  * Client for kwits-api. This is the app's only network boundary -- Supabase is
  * reached through kwits-api, never directly from here.
  */
 const apiBaseUrl = (Constants.expoConfig?.extra?.apiBaseUrl as string) ?? "";
+const useMockApi = Constants.expoConfig?.extra?.useMockApi === true;
 
-/** Error carrying the HTTP status, so callers can tell 401 from a real failure. */
-export class ApiError extends Error {
-  constructor(
-    readonly status: number,
-    message: string,
-    readonly fieldErrors?: Record<string, string>,
-  ) {
-    super(message);
-    this.name = "ApiError";
-  }
-}
+export { ApiError };
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { token, body, method = body ? "POST" : "GET" } = options;
@@ -79,15 +76,20 @@ function safeParse(text: string): unknown {
   }
 }
 
-export const api = {
-  login: (email: string, password: string) =>
+const liveApi: KwitsApi = {
+  login: (email, password) =>
     request<LoginResponse>("/v1/auth/login", { body: { email, password } }),
 
-  signup: (email: string, password: string, name?: string) =>
-    request<LoginResponse>("/v1/auth/signup", { body: { email, password, name } }),
+  signup: (input) => request<SignupResponse>("/v1/auth/signup", { body: input }),
+
+  verifyOtp: (email, code) =>
+    request<LoginResponse>("/v1/auth/verify-otp", { body: { email, code } }),
+
+  resendCode: (email) =>
+    request<ResendCodeResponse>("/v1/auth/resend-code", { body: { email } }),
 
   /** Protected: requires the token returned by login. */
-  getPlans: async (token: string | null): Promise<TravelPlan[]> => {
+  getPlans: async (token) => {
     const plans = await request<PlanResponseBody[]>("/v1/plans", { token });
     return plans.map((plan) => ({
       ...plan,
@@ -95,3 +97,9 @@ export const api = {
     }));
   },
 };
+
+/**
+ * Swapped by USE_MOCK_API in .env. verify-otp and resend-code do not exist in
+ * kwits-api yet, so the mock is what the signup flow currently runs against.
+ */
+export const api: KwitsApi = useMockApi ? mockApi : liveApi;

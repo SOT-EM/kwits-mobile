@@ -1,71 +1,92 @@
-import { View, Text, Pressable, TextInput, ActivityIndicator } from "react-native";
-import { useRouter } from "expo-router";
-import { useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { Text, View } from "react-native";
+
+import { FormScreen } from "@/components/layout/FormScreen";
+import { Button, PasswordField, TextField } from "@/components/ui";
+import { useGoBack } from "@/hooks/useGoBack";
 import { useAuthStore } from "@/lib/auth";
+import { loginSchema, type LoginValues } from "@/lib/validation/auth";
 
 export default function LoginScreen() {
-    const router = useRouter();
-    const { login, isLoading, error } = useAuthStore();
+    const goBack = useGoBack("/(auth)/welcome");
+    const login = useAuthStore((state) => state.login);
+    const isLoading = useAuthStore((state) => state.isLoading);
+    const error = useAuthStore((state) => state.error);
+    const clearError = useAuthStore((state) => state.clearError);
 
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+    const { control, handleSubmit, formState } = useForm<LoginValues>({
+        resolver: zodResolver(loginSchema),
+        defaultValues: { email: "", password: "" },
+    });
 
-    const canSubmit = email.trim().length > 0 && password.length > 0 && !isLoading;
+    // A stale failure from a previous attempt should not greet the next visit.
+    useEffect(() => clearError, [clearError]);
 
-    const onSubmit = async () => {
-        const succeeded = await login(email.trim(), password);
-        if (succeeded) {
-            router.replace("/(tabs)");
-        }
-        // On failure the store holds the message; it renders below the form.
-    };
+    const onSubmit = handleSubmit(async (values) => {
+        // Routing on success belongs to the root layout: it reads the new token
+        // and sends the user on to onboarding or the tabs.
+        await login(values.email, values.password);
+    });
 
     return (
-        <View className="flex-1 p-6">
-            <Text className="mt-10 text-2xl font-semibold">Sign in</Text>
-
-            <TextInput
-                value={email}
-                onChangeText={setEmail}
-                placeholder="Email"
-                autoCapitalize="none"
-                autoComplete="email"
-                keyboardType="email-address"
-                editable={!isLoading}
-                className="mt-8 rounded-xl border border-neutral-300 p-4"
-            />
-
-            <TextInput
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Password"
-                autoCapitalize="none"
-                autoComplete="current-password"
-                secureTextEntry
-                editable={!isLoading}
-                onSubmitEditing={() => {
-                    if (canSubmit) onSubmit();
-                }}
-                className="mt-4 rounded-xl border border-neutral-300 p-4"
-            />
-
-            {error ? (
-                <Text className="mt-4 text-red-600">{error}</Text>
-            ) : null}
-
-            <Pressable
-                onPress={onSubmit}
-                disabled={!canSubmit}
-                className={`mt-auto rounded-xl p-4 ${
-                    canSubmit ? "bg-neutral-900" : "bg-neutral-400"
-                }`}
-            >
-                {isLoading ? (
-                    <ActivityIndicator color="white" />
-                ) : (
-                    <Text className="text-center text-white">Sign in</Text>
+        <FormScreen
+            title="Login with Email"
+            onBack={goBack}
+            footer={
+                <>
+                    {error ? (
+                        <Text className="font-sans px-1 text-center text-sm text-danger">{error}</Text>
+                    ) : null}
+                    <Button label="Login" onPress={onSubmit} isLoading={isLoading} />
+                </>
+            }
+        >
+            <Controller
+                control={control}
+                name="email"
+                render={({ field: { onChange, onBlur, value } }) => (
+                    <TextField
+                        label="Email"
+                        value={value}
+                        onChangeText={onChange}
+                        onBlur={onBlur}
+                        error={formState.errors.email?.message}
+                        editable={!isLoading}
+                        placeholder="you@example.com"
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        autoComplete="email"
+                        keyboardType="email-address"
+                        returnKeyType="next"
+                    />
                 )}
-            </Pressable>
-        </View>
+            />
+
+            <View className="gap-2">
+                <Controller
+                    control={control}
+                    name="password"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                        <PasswordField
+                            label="Password"
+                            value={value}
+                            onChangeText={onChange}
+                            onBlur={onBlur}
+                            error={formState.errors.password?.message}
+                            editable={!isLoading}
+                            autoComplete="current-password"
+                            returnKeyType="go"
+                            onSubmitEditing={onSubmit}
+                        />
+                    )}
+                />
+
+                <Text accessibilityRole="link" className="font-sans pt-4 px-1 text-md text-muted">
+                    Forgot Password?
+                </Text>
+            </View>
+        </FormScreen>
     );
 }
