@@ -31,12 +31,27 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   extra: {
     mapTilerApiKey: process.env.MAPTILER_API_KEY,
     apiBaseUrl: process.env.API_BASE_URL,
+    useMockApi: process.env.USE_MOCK_API === "true",
     eas: {
       projectId: process.env.EAS_PROJECT_ID,
     },
   },
   plugins: [
     "expo-router",
+    [
+      "expo-font",
+      {
+        // Embedded at build time rather than loaded at runtime, so text renders in
+        // the right face on the first frame with no flash of a fallback font.
+        // Only the three weights the designs use are embedded -- each file is
+        // ~700KB, so shipping all nine would add ~6MB to the binary for nothing.
+        fonts: [
+          "./assets/fonts/SunghyunSans-Regular.ttf",
+          "./assets/fonts/SunghyunSans-SemiBold.ttf",
+          "./assets/fonts/SunghyunSans-Bold.ttf",
+        ],
+      },
+    ],
     [
       "expo-build-properties",
       {
