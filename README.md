@@ -15,6 +15,7 @@ The app never calls Supabase directly — not for auth, not for storage, not for
 | Layer | Technology |
 | --- | --- |
 | App framework | React Native (`0.86.2`) + Expo (`~57.0.14`), file-based routing via Expo Router |
+| Dev/runtime target | Expo **development build** via `expo-dev-client` (`~57.0.18`) — not Expo Go |
 | Backend | [kwits-api](../kwits-api) (Spring Boot), reached over HTTP via `src/lib/api.ts` |
 | Client state | Zustand (`zustand`) + AsyncStorage for the persisted auth token |
 | Styling | NativeWind (Tailwind for React Native) |
@@ -71,6 +72,12 @@ src/
 
 The database schema and the Supabase CLI project live in [kwits-api](../kwits-api), which owns them. There is no `supabase/` folder here and no database tooling in `package.json`.
 
+## Running it
+
+This app **cannot run in Expo Go.** MapLibre, `expo-camera`, and `expo-image-picker` are native modules Expo Go does not bundle, so the app runs as an Expo development build: a native binary of this app with `expo-dev-client` embedded, installed on an emulator or a real phone and driven by a Metro dev server. The first build is local Gradle (10-20 minutes); after that the day-to-day loop is `npm run start:dev` plus opening the app.
+
+iOS builds are not possible on Windows and go through EAS Build's cloud service instead. See [docs/HOW_TO_RUN.md](./docs/HOW_TO_RUN.md) for both paths.
+
 ## Configuration
 
 One variable does the work: `API_BASE_URL` in `.env`, surfaced to the app through `app.config.ts` as `Constants.expoConfig.extra.apiBaseUrl`. See `.env.example` for the full list and for why the Android emulator needs `10.0.2.2` instead of `localhost`.
@@ -88,8 +95,8 @@ PRs only — no direct pushes to `dev`, `staging`, or `prod`. The flow between b
 | Doc | What it covers |
 | --- | --- |
 | [docs/HOW_TO_SETUP.md](./docs/HOW_TO_SETUP.md) | Fresh machine to a working build: Node, Android SDK, cloning both repos, `.env` |
-| [docs/HOW_TO_RUN.md](./docs/HOW_TO_RUN.md) | The day-to-day dev loop, native rebuilds, EAS builds, CI checks, PR flow |
-| [docs/HOW_TO_DEBUG.md](./docs/HOW_TO_DEBUG.md) | Troubleshooting runbook: Android native build failures on Windows, and kwits-api connectivity |
+| [docs/HOW_TO_RUN.md](./docs/HOW_TO_RUN.md) | The day-to-day dev loop, native rebuilds, running on a physical device over wireless adb, EAS builds, CI checks, PR flow |
+| [docs/HOW_TO_DEBUG.md](./docs/HOW_TO_DEBUG.md) | Troubleshooting runbook: Android native build failures on Windows, kwits-api connectivity, and physical-device/wireless-debugging problems |
 
 Backend setup and running lives in [kwits-api/docs](../kwits-api/docs).
 
@@ -97,3 +104,4 @@ Backend setup and running lives in [kwits-api/docs](../kwits-api/docs).
 
 - New to the project? Follow [docs/HOW_TO_SETUP.md](./docs/HOW_TO_SETUP.md) to configure your machine.
 - Already set up? See [docs/HOW_TO_RUN.md](./docs/HOW_TO_RUN.md) for the day-to-day dev loop, builds, and PR flow.
+- Expecting to scan a QR code with Expo Go? You can't — see "Running it" above.

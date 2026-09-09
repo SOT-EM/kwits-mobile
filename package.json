@@ -11,6 +11,7 @@
     "expo-build-properties": "~57.0.12",
     "expo-camera": "~57.0.3",
     "expo-constants": "~57.0.12",
+    "expo-dev-client": "~57.0.18",
     "expo-font": "~57.0.3",
     "expo-image-picker": "~57.0.11",
     "expo-linking": "~57.0.6",
@@ -38,9 +39,12 @@
   },
   "scripts": {
     "start": "expo start",
+    "start:dev": "expo start --dev-client",
     "android": "expo run:android",
+    "android:device": "expo run:android --device",
     "android:dev": "expo start --dev-client --clear --android",
     "ios": "expo run:ios",
+    "ios:device": "expo run:ios --device",
     "ios:dev": "expo start --dev-client --clear --ios",
     "web": "expo start --web"
   },

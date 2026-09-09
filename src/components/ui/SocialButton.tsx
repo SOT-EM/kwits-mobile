@@ -21,7 +21,7 @@ export function SocialButton({ label, icon, onPress, disabled = false }: SocialB
       // three labels differ in width, so centring each row on its own lands every
       // icon at a different x. A percentage inset keeps the block optically
       // centred across screen widths while the icons share one edge.
-      className={`min-h-[60px] flex-row items-center rounded-full border border-hairline pl-[15%] pr-6 py-4 active:opacity-70 ${disabled ? "opacity-40" : ""}`}
+      className={`min-h-[60px] flex-row items-center rounded-full border border-hairline pl-[25%] pr-6 py-4 active:opacity-70 ${disabled ? "opacity-40" : ""}`}
     >
       <View className="mr-3">{icon}</View>
       <Text className="text-lg font-sans-semibold text-foreground">{label}</Text>

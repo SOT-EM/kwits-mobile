@@ -57,9 +57,9 @@ export default function WelcomeScreen() {
             <Animated.View
                 key={`legal-${replayKey}`}
                 entering={FadeInUp.duration(DURATION.base).easing(EASE.decelerate).delay(DURATION.base)}
-                className="items-center gap-4"
+                className="items-center "
             >
-                <Text className="font-sans text-center text-md text-muted">
+                <Text className="font-sans text-center text-md text-muted pb-10 ">
                     Don&apos;t have an account?{" "}
                     <Text
                         accessibilityRole="link"
