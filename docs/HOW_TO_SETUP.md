@@ -17,6 +17,10 @@ nvm install 20.18.1
 nvm use
 ```
 
+### No Expo Go
+
+Skip Expo Go entirely — do not install it, and ignore the QR code Metro prints. This app depends on `@maplibre/maplibre-react-native`, `expo-camera`, and `expo-image-picker`, which Expo Go does not bundle. It runs instead as an **Expo development build**: a native binary of this app with `expo-dev-client` embedded, which you build in [HOW_TO_RUN.md](./HOW_TO_RUN.md) and launch from the phone's home screen like any other app. `expo-dev-client` is already in `package.json` `dependencies`, so `npm install` below covers it — there is nothing extra to add.
+
 ### Android SDK (Android Studio, SDK only)
 
 You don't need the full Android Studio IDE workflow — just its SDK, so you can build and run the app locally without consuming EAS cloud build quota.
@@ -47,6 +51,23 @@ You don't need the full Android Studio IDE workflow — just its SDK, so you can
    ```bash
    sdkmanager --licenses
    ```
+
+5. Confirm `adb` resolves in a **new** terminal:
+
+   ```bash
+   adb version
+   ```
+
+   `adb` ships with Platform-Tools and is what installs the build onto a device. If a shell you already had open cannot find it, that shell predates the `PATH` change — open a fresh one rather than reinstalling anything.
+
+### A physical Android device (optional but recommended)
+
+An emulator is enough for most screens, but the map, camera, and image-picker features are worth exercising on real hardware. On Android 11+ no cable is needed:
+
+- On the phone: **Settings > About phone**, tap **Build number** seven times to unlock Developer options.
+- **Developer options > Wireless debugging > on.**
+
+The pairing and connection steps are in [HOW_TO_RUN.md](./HOW_TO_RUN.md#5-running-on-a-device-vs-an-emulator) — they belong to the run loop rather than one-time setup. One thing to sort out now, though: the phone and your machine must be on the **same subnet**, with no AP client isolation and no VPN on either side. Guest Wi-Fi networks typically block exactly this, and they break adb and Metro and your API calls all at once.
 
 ## 2. Clone both repos as siblings
 
@@ -151,6 +172,12 @@ Before attempting a native build, confirm the JS side is sound:
 ```bash
 npx tsc --noEmit          # should exit 0 with no output
 npx expo config --type public   # should print resolved config including extra.apiBaseUrl
+```
+
+If you plan to run on a physical device, confirm it is attached before starting a build that takes minutes:
+
+```bash
+adb devices               # the device must be listed with state "device"
 ```
 
 If `extra.apiBaseUrl` comes back empty, `.env` is missing or wasn't picked up — `app.config.ts` loads it via `dotenv/config`, so it must exist at the repo root.

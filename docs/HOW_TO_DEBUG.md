@@ -1,9 +1,10 @@
 # How to debug kwits (mobile)
 
-A troubleshooting runbook, in two parts:
+A troubleshooting runbook, in three parts:
 
 - **Part 1 (Problems 1-9)** — getting a native Android build to compile on Windows (`npx expo run:android` and the underlying Gradle/CMake toolchain). Each entry is a real failure encountered while getting this project building natively, in the order they tend to appear on a fresh Windows setup.
 - **Part 2 (Problems 10-13)** — the app runs, but can't talk to [kwits-api](../../kwits-api). These all look like a broken network and none of them are.
+- **Part 3 (Problems 14-16)** — the build compiles, but getting it onto a physical phone over wireless debugging goes wrong. The failures here are quiet: things report success and simply don't happen.
 
 **How to use this:** Ctrl+F the exact error text you're seeing, jump to that section, apply the fix. Root causes and fixes are verified against this repo's actual config as of this revision — if something has since changed (see the "Current repo state" notes inline), trust the repo over this doc.
 
@@ -351,6 +352,104 @@ npx expo start --dev-client --clear
 
 ---
 
+# Part 3: physical devices and wireless debugging
+
+This app cannot run in Expo Go — it needs `@maplibre/maplibre-react-native`, `expo-camera`, and `expo-image-picker`, none of which Expo Go bundles. It runs as an Expo development build (`expo-dev-client`, in `package.json` `dependencies`). So the questions "is it installed" and "can it see Metro" are two separate failures with two separate fixes, and the QR code Metro prints is not part of either — it is an Expo Go affordance and scanning it will not help.
+
+## Problem 14: `BUILD SUCCESSFUL` and Metro starts, but the app never appears on the phone
+
+**Symptom:** `npm run android:device` runs for several minutes and ends cleanly:
+
+```
+BUILD SUCCESSFUL in 7m 7s
+492 actionable tasks: 374 executed, 88 from cache, 30 up-to-date
+Starting Metro Bundler
+```
+
+Metro prints its QR code and waits. There is no error anywhere. But there is no **kwits** icon in the phone's app drawer, and `adb shell pm list packages | grep kwits` returns nothing.
+
+**Cause:** the Gradle build genuinely succeeded; the *install* step was silently skipped. Under wireless debugging, adb identifies the device by an mDNS service name rather than an `IP:port` pair:
+
+```
+adb-5A010DLCH003R5-rWgA00._adb-tls-connect._tcp   device   product:blazer_beta   model:Pixel_10_Pro
+```
+
+Expo's device-targeting step does not reliably match that form, so it builds, starts Metro, and never runs the install. Nothing reports a failure because nothing failed — a step just didn't execute.
+
+**Fix:** the APK is already on disk and valid. Push it yourself, then launch it:
+
+```bash
+adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+adb reverse tcp:8081 tcp:8081
+adb shell monkey -p com.kwits.sotm -c android.intent.category.LAUNCHER 1
+```
+
+Do **not** rebuild — you would spend another seven minutes reproducing an APK you already have. Confirm before and after:
+
+```bash
+adb devices -l                                  # is the phone actually attached?
+adb shell pm list packages | grep -i kwits      # expect: package:com.kwits.sotm
+```
+
+The debug APK is around 110 MB, so a wireless install takes noticeably longer than over USB. `Performing Streamed Install` followed by `Success` is the whole output.
+
+> Over **USB** the serial is a plain string and Expo targets it correctly, so this problem is wireless-only. If you would rather avoid it entirely, do first installs over a cable and switch to wireless for the JS dev loop afterwards.
+
+## Problem 15: the app launches but shows "Could not connect to development server"
+
+**Symptom:** the dev build opens, then a red screen or a bundler-unreachable message. Metro is running in your terminal and shows no incoming request.
+
+**Cause:** the app resolves Metro over the network by default, so anything between the phone and port 8081 breaks it — guest Wi-Fi or AP client isolation, a VPN on either side, a different subnet, or Windows Firewall blocking inbound 8081 on the Private profile.
+
+**Fix:** stop relying on LAN routing and tunnel it through adb instead:
+
+```bash
+adb reverse tcp:8081 tcp:8081
+```
+
+That maps the phone's own `localhost:8081` to Metro on your machine, which sidesteps subnets, isolation, and the firewall in one move. Then reload the app.
+
+If it still fails, open the in-app dev menu and check the configured server address:
+
+```bash
+adb shell input keyevent 82      # opens the dev menu without shaking the phone
+```
+
+`adb reverse` is **not** persistent. It is lost on a phone reboot, a Wi-Fi drop, an `adb kill-server`, or a re-pair. Re-running it is the first thing to try whenever a previously-working device stops reaching Metro.
+
+## Problem 16: `adb devices` is empty, or the phone shows as `unauthorized` / `offline`
+
+**Symptom:** the device vanished from `adb devices` between sessions, or appears with a state other than `device`.
+
+**Cause:** wireless adb connections do not survive reboots or network changes. Pairing (a one-time trust) and connecting (per-session) are separate things, and they use **two different ports** — which is the usual mistake:
+
+- The **pairing** port is randomised and shown only in the "Pair device with pairing code" dialog.
+- The **connection** port is on the main Wireless debugging screen, normally `5555`.
+
+**Fix:** try reconnecting first — pairing usually survives:
+
+```bash
+adb connect 192.168.100.28:5555
+adb devices
+```
+
+If that fails, re-pair (reopen the dialog to get a fresh port and code):
+
+```bash
+adb pair 192.168.100.28:41234
+adb connect 192.168.100.28:5555
+```
+
+If it still will not attach, reset the daemon: `adb kill-server && adb start-server`, then reconnect. Note that the phone's IP is not stable unless you have reserved it on your router, so confirm it on the Wireless debugging screen rather than reusing a remembered value.
+
+**Android 10 or older** has no `adb pair` at all. Bootstrap once over a cable: `adb tcpip 5555`, unplug, then `adb connect <phone-ip>:5555`.
+
+### The address that trips people up
+
+`adb connect` takes the **phone's** IP. `API_BASE_URL` in `.env` takes **your machine's** LAN IP. They are different values on the same subnet, and swapping them produces two failures that look nothing alike: a phone IP in `API_BASE_URL` gives you the app's own `Could not reach kwits-api at <url>` message (Part 2), while your machine's IP in `adb connect` simply refuses to connect.
+
+---
+
 ## Gradle properties: crisis-mode vs. ongoing defaults
 
 `android/gradle.properties` is **gitignored** (`/android` in `.gitignore`) and fully regenerated every time you run `expo prebuild`. Nothing in it persists across a `--clean` prebuild — so the settings below are two different modes, not one "final" config to commit:
@@ -371,3 +470,6 @@ Only switch to the crisis-mode column when you're actively hitting the specific 
 - When `expo run:android` fails or exits silently, always retry with `EXPO_DEBUG=true` before assuming the emulator/device isn't detected — the real cause is very often hidden by the CLI's default quiet output.
 - After any native-level crash (JVM, linker, daemon), don't trust a subsequent "successful" build at face value if the app then fails at runtime — do the full cache wipe in Problem 9 rather than assuming a clean build actually started from a clean state.
 - `android/` is regenerated and gitignored — any fix that lives only in `android/gradle.properties` will vanish on the next `prebuild --clean`. Keep this doc's crisis-mode table as the source of truth to reapply, rather than relying on the file itself as a record.
+- **`BUILD SUCCESSFUL` says the APK compiled, not that it reached the phone.** Verify installs with `adb shell pm list packages | grep -i kwits` rather than inferring them from the build log (Problem 14). A skipped step reports nothing.
+- Before rebuilding to fix anything device-related, check whether the APK you already have is fine — `android/app/build/outputs/apk/debug/app-debug.apk` can almost always be pushed with `adb install -r` instead of spending another several minutes on Gradle.
+- Never scan Metro's QR code for this project. It is an Expo Go entry point, this app cannot run in Expo Go, and reaching for it wastes time that belongs on the install and `adb reverse` checks instead.
