@@ -18,11 +18,11 @@ import { DURATION, EASE, PILL_NAV } from "@/constants/motion";
 import type { IconProps } from "@/types";
 
 const ICON_SIZE = 20;
-const BOTTOM_MARGIN = 16;
+export const TAB_BAR_BOTTOM_MARGIN = 16;
 
 /** Space a screen must leave free at the bottom so the floating bar covers nothing. */
 export const TAB_BAR_RESERVED_HEIGHT =
-  PILL_NAV.expandedCircleSize + PILL_NAV.expandedPaddingV * 2 + BOTTOM_MARGIN * 2;
+  PILL_NAV.expandedCircleSize + PILL_NAV.expandedPaddingV * 2 + TAB_BAR_BOTTOM_MARGIN * 2;
 
 type TabItem = {
   key: string;
@@ -36,7 +36,8 @@ type TabItem = {
 
 const ITEMS: readonly TabItem[] = [
   { key: "home", label: "Dashboard", Icon: HomeIcon, route: "index" },
-  { key: "people", label: "Profile", Icon: PeopleIcon, route: "profile" },
+  //instead of a profile tab, we have a people tab that shows circles, in accordance with gwy's comment in figma design.
+  { key: "people", label: "Circles", Icon: PeopleIcon, route: "circles" },
   { key: "trips", label: "Trips", Icon: IslandIcon, route: "trips" },
   { key: "receipts", label: "Payment QR codes", Icon: ReceiptIcon, route: "index" },
 ];
@@ -242,7 +243,7 @@ export function TabBar({ state, navigation, insets }: BottomTabBarProps) {
   return (
     <Animated.View
       pointerEvents="box-none"
-      style={[{ paddingBottom: insets.bottom + BOTTOM_MARGIN }, rootStyle]}
+      style={[{ paddingBottom: insets.bottom + TAB_BAR_BOTTOM_MARGIN }, rootStyle]}
       className="absolute bottom-0 left-0 right-0"
     >
       <Animated.View style={rowStyle} className="flex-row items-center">

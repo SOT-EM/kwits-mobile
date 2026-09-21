@@ -24,7 +24,9 @@ export default function TabsLayout() {
         >
             <Tabs.Screen name="index" options={{ title: "Dashboard" }} />
             <Tabs.Screen name="trips" options={{ title: "Trips" }} />
-            <Tabs.Screen name="profile" options={{ title: "Profile" }} />
+            {/* Profile is temporarily hidden while the People tab is used for Circles. */}
+            {/* <Tabs.Screen name="profile" options={{ title: "Profile" }} /> */}
+            <Tabs.Screen name="circles" options={{ title: "Circles" }} />
         </Tabs>
     );
 }
