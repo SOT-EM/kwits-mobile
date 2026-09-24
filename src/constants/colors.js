@@ -19,6 +19,13 @@ const COLORS = {
   hairline: "#D4D4D4",
   skeleton: "#D9D9D9",
   "dot-inactive": "#DDDDDD",
+  "circle-avatar-background": "#D9F0FF",
+  "circle-avatar": "#48B8F2",
+  "circle-name": "#555555",
+  "circle-member-blue": "#C9EDFF",
+  "circle-member-yellow": "#FFF0C4",
+  "circle-member-name": "#4A4A4A",
+  "circle-invite": "#C5C5C5",
 };
 
 module.exports = { COLORS };
