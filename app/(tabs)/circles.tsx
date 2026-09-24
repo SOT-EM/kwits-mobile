@@ -11,8 +11,8 @@ export default function CirclesScreen() {
 
 	return (
 		<View className="flex-1 bg-background">
-			<View className="h-16 flex-row items-center justify-between px-4">
-				<Text className="font-sans-semibold text-[15px] text-foreground">
+			<View className="flex-row items-center justify-between px-[4%] py-[2%]">
+				<Text className="font-sans-semibold text-base text-foreground">
 					Your Circles ({CIRCLES.length})
 				</Text>
 
@@ -48,16 +48,16 @@ function CircleItem({ circle, onPress }: { circle: Circle; onPress: () => void }
 			accessibilityRole="button"
 			accessibilityLabel={`Open ${circle.name}`}
 			onPress={onPress}
-			className="mb-0.5 h-14 flex-row items-center rounded-[10px] px-2 active:bg-input"
+				className="mb-0.5 flex-row items-center rounded-lg px-[2%] py-[2%] active:bg-input"
 		>
-			<View className="mr-2 h-[38px] w-[38px] items-center justify-center rounded-full bg-[#D9F0FF]">
-				<View className="h-5 w-5 items-center justify-center rounded-[5px] bg-[#48B8F2]">
+			<View className="mr-[2%] aspect-square w-[10%] items-center justify-center rounded-full bg-circle-avatar-background">
+				<View className="aspect-square w-[52%] items-center justify-center rounded-[25%] bg-circle-avatar">
 					<Text className="font-sans-semibold text-xs text-on-primary">{circle.initial}</Text>
 				</View>
 			</View>
 
-			<Text className="flex-1 font-sans text-xs text-[#555555]">{circle.name}</Text>
-			<Text className="mr-1 text-[22px] font-light leading-6 text-muted">›</Text>
+			<Text className="flex-1 font-sans text-xs text-circle-name">{circle.name}</Text>
+			<Text className="mr-1 text-xl font-light leading-6 text-muted">›</Text>
 		</Pressable>
 	);
 }

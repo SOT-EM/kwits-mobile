@@ -42,7 +42,7 @@ export default function CircleMembersScreen() {
 
 	return (
 		<SafeAreaView className="flex-1 bg-background" edges={["top"]}>
-			<View className="h-12 flex-row items-center justify-between px-3">
+			<View className="flex-row items-center justify-between px-3 py-[2%]">
 				<Pressable
 					accessibilityRole="button"
 					accessibilityLabel="Go back"
@@ -52,12 +52,12 @@ export default function CircleMembersScreen() {
 					<ChevronLeftIcon size={16} color={COLORS.muted} />
 				</Pressable>
 
-				<Text className="absolute left-0 right-0 text-center font-sans-semibold text-[13px] text-foreground">
+				<Text className="absolute left-0 right-0 text-center font-sans-semibold text-xs text-foreground">
 					New Circle
 				</Text>
 
-				<View className="h-[34px] w-[34px] items-center justify-center rounded-full border-2 border-background bg-skeleton shadow-sm">
-					<Text className="font-sans-semibold text-[7px] text-muted">IMG</Text>
+				<View className="h-9 w-9 items-center justify-center rounded-full border-2 border-background bg-skeleton shadow-sm">
+					<Text className="font-sans-semibold text-[0.5rem] text-muted">IMG</Text>
 				</View>
 			</View>
 
@@ -74,26 +74,26 @@ export default function CircleMembersScreen() {
 				keyboardShouldPersistTaps="handled"
 				showsVerticalScrollIndicator={false}
 			>
-				<View className="mt-0.5 h-[31px] flex-row items-center rounded-full bg-input px-2">
-					<Text className="mr-1 text-[17px] leading-5 text-muted">⌕</Text>
+				<View className="mt-0.5 h-8 flex-row items-center rounded-full bg-input px-2">
+					<Text className="mr-1 text-lg leading-5 text-muted">⌕</Text>
 					<TextInput
 						value={search}
 						onChangeText={setSearch}
 						placeholder="Search"
 						placeholderTextColor={COLORS.muted}
-						className="flex-1 p-0 font-sans text-[10px] text-foreground"
+						className="flex-1 p-0 font-sans text-xs text-foreground"
 					/>
 				</View>
 
 				<Pressable
 					accessibilityRole="button"
 					accessibilityLabel="Invite members"
-					className="mt-2 h-20 items-center justify-center rounded-[15px] border border-dashed border-hairline active:bg-input"
+					className="mt-2 h-20 items-center justify-center rounded-2xl border border-dashed border-hairline active:bg-input"
 				>
-					<Text className="font-sans text-[10px] text-[#C5C5C5]">Invite members</Text>
+					<Text className="font-sans text-xs text-circle-invite">Invite members</Text>
 				</Pressable>
 
-				<Text className="mt-[17px] font-sans-semibold text-[9px] text-foreground">Suggested</Text>
+				<Text className="mt-4 font-sans-semibold text-xs text-foreground">Suggested</Text>
 
 				<View className="mt-1">
 					{filteredMembers.map((member) => {
@@ -105,20 +105,20 @@ export default function CircleMembersScreen() {
 								onPress={() => toggleMember(member.id)}
 								accessibilityRole="checkbox"
 								accessibilityState={{ checked: isSelected }}
-								className="h-[43px] flex-row items-center"
+								className="h-11 flex-row items-center"
 							>
 								<View
-									className={`mr-2 h-[27px] w-[27px] items-center justify-center rounded-full ${member.color === "yellow" ? "bg-[#FFF0C4]" : "bg-[#C9EDFF]"}`}
+									className={`mr-2 h-7 w-7 items-center justify-center rounded-full ${member.color === "yellow" ? "bg-circle-member-yellow" : "bg-circle-member-blue"}`}
 								>
-									<Text className="font-sans-semibold text-[5px] text-on-primary">IMG</Text>
+									<Text className="font-sans-semibold text-[0.5rem] text-on-primary">IMG</Text>
 								</View>
 
-								<Text className="flex-1 font-sans text-[9px] text-[#4A4A4A]">{member.name}</Text>
+								<Text className="flex-1 font-sans text-xs text-circle-member-name">{member.name}</Text>
 
 								<View
-									className={`mr-1 h-[11px] w-[11px] items-center justify-center rounded-full border-[1.5px] ${isSelected ? "border-primary" : "border-muted"}`}
+									className={`mr-1 h-3 w-3 items-center justify-center rounded-full border ${isSelected ? "border-primary" : "border-muted"}`}
 								>
-									{isSelected ? <View className="h-[5px] w-[5px] rounded-full bg-primary" /> : null}
+									{isSelected ? <View className="h-1 w-1 rounded-full bg-primary" /> : null}
 								</View>
 							</Pressable>
 						);
@@ -143,7 +143,7 @@ export default function CircleMembersScreen() {
 					}}
 					className="items-center justify-center rounded-full bg-primary active:opacity-80"
 				>
-					<Text className="font-sans-semibold text-[9px] text-on-primary">Next</Text>
+										<Text className="font-sans-semibold text-xs text-on-primary">Next</Text>
 				</Pressable>
 			</View>
 		</SafeAreaView>
